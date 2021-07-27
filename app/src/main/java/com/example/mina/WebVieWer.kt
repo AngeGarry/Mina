@@ -16,20 +16,16 @@ import androidx.webkit.WebViewCompat
 class WebVieWer : AppCompatActivity() {
 
     lateinit var myWebView : WebView
-    lateinit var context : Context
-    lateinit var upLoadListener: DownloadListener
-    var readAccess = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_web_viewer)
 
         //this is for hiding status bar
         this.window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN ,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
-
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_web_viewer)
 
         //find layout
         myWebView = findViewById(R.id.webview)
@@ -43,9 +39,9 @@ class WebVieWer : AppCompatActivity() {
         //Add JavaScript interface for popups
         //myWebView.addJavascriptInterface(WebAppInterface(this), "Android")
 
-        /*myWebView.webChromeClient = object : WebChromeClient(){
+        myWebView.webChromeClient = object : WebChromeClient(){
 
-        }*/
+        }
 
         //Default Settings
         myWebView.apply {
@@ -76,7 +72,7 @@ class WebVieWer : AppCompatActivity() {
                     }
                 }
 
-                override fun onReceivedError(
+                /*override fun onReceivedError(
                     view: WebView? ,
                     request: WebResourceRequest? ,
                     error: WebResourceError?
@@ -84,8 +80,7 @@ class WebVieWer : AppCompatActivity() {
                     super.onReceivedError(view , request , error)
                     val path: String = Uri.parse("file:///android_asset/404.html").toString()
                     myWebView.loadUrl(path)
-
-                }
+                }*/
 
                 override fun shouldOverrideUrlLoading(view: WebView? , url: String?): Boolean {
                     view?.loadUrl(url!!)
@@ -93,6 +88,7 @@ class WebVieWer : AppCompatActivity() {
                     return true
                 }
             }
+
 
             //Add default URL
             myWebView.loadUrl("https://quick-computer.herokuapp.com/")
