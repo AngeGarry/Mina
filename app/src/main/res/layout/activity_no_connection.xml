@@ -7,4 +7,5 @@
     android:layout_height="match_parent"
     android:background="@drawable/e404"
     android:onClick="onTouch"
-    tools:context=".NoConnection" />
+    tools:context=".NoConnection"
+    tools:ignore="SpeakableTextPresentCheck" />

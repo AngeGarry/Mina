@@ -1,10 +1,15 @@
 package com.example.mina
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.Activity
+import android.app.AlertDialog
+import android.app.DownloadManager
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -13,13 +18,20 @@ import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.*
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.webkit.WebViewCompat
+import android.webkit.WebView
+
+
+
 
 
 class WebVieWer : AppCompatActivity() {
@@ -29,6 +41,8 @@ class WebVieWer : AppCompatActivity() {
     private var uploadMessage: ValueCallback<Uri>? = null
     private var uploadMessageAboveL: ValueCallback<Array<Uri>>? = null
 
+
+    @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_web_viewer)
@@ -84,9 +98,8 @@ class WebVieWer : AppCompatActivity() {
 
                         override fun onPageStarted(view: WebView? , url: String? , favicon: Bitmap?) {
                             super.onPageStarted(view , url , favicon)
-                            progressDialog.setTitle("Loading...")
-                            progressDialog.setMessage("Please Wait!")
-                            //progressDialog.
+                            //progressDialog.setTitle("Loading...")
+                            //progressDialog.setMessage("Please Wait!")
                             progressDialog.setCancelable(false)
                             progressDialog.show()
                         }
@@ -111,11 +124,17 @@ class WebVieWer : AppCompatActivity() {
                         }
 
                         //Catch Redirections errors
-                        override fun shouldOverrideUrlLoading(view: WebView? , url: String?): Boolean {
+                        fun shouldOverrideUrlLoading(view: WebView? , url: String?, request: Uri): Boolean {
+                            if (request.scheme == "blob") {
+                                // do your special handling for blob urls here
+                                return true
+                            }
                             view?.loadUrl(url!!)
                             //Toast.makeText(this, url, Toast.LENGTH_SHORT).show()
                             return true
+
                         }
+
                     }
                 }
 
@@ -156,6 +175,28 @@ class WebVieWer : AppCompatActivity() {
                     }
                 }
 
+
+                webview.setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+                    //checking Runtime permissions
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    {
+                        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                            //Do this, if permission granted
+                            downloadDialog(url, userAgent, contentDisposition, mimetype)
+                        } else {
+                            //Do this, if there is no permission
+                            ActivityCompat.requestPermissions(
+                                this,
+                                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                                1
+                            )
+                        }
+                    } else {
+                        //Code for devices below API 23 or Marshmallow
+                        downloadDialog(url, userAgent, contentDisposition, mimetype)
+                    }
+                }
+
                 //Default link
                 val targetUrl = "http://quick-computer.herokuapp.com/View/index.php"
                 //val targetUrl = "http://mina.center/View/index.php"
@@ -180,7 +221,7 @@ class WebVieWer : AppCompatActivity() {
 
     }
 
-    //ALL THE FUNCTIONS
+    //ALL THE FUNCTIONS FOR UPLOADING
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
     private fun openImageChooserActivity() {
         val i = Intent(Intent.ACTION_GET_CONTENT)
@@ -244,6 +285,51 @@ class WebVieWer : AppCompatActivity() {
 
 
 
+    //ALL FUNCTIONS FOR DOWNLOADING
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    fun downloadDialog(url:String,userAgent:String,contentDisposition:String,mimetype:String)
+    {
+        //getting file name from url
+        val filename = URLUtil.guessFileName(url, contentDisposition, mimetype)
+        //Alertdialog
+        val builder = AlertDialog.Builder(this@WebVieWer)
+        //title for AlertDialog
+        builder.setTitle("Download")
+        //message of AlertDialog
+        builder.setMessage("Do you want to save $filename")
+        //if YES button clicks
+        builder.setPositiveButton("Yes") { dialog, which ->
+            //DownloadManager.Request created with url.
+            val request = DownloadManager.Request(Uri.parse(url))
+            //cookie
+            val cookie = CookieManager.getInstance().getCookie(url)
+            //Add cookie and User-Agent to request
+            request.addRequestHeader("Cookie",cookie)
+            request.addRequestHeader("User-Agent",userAgent)
+            //file scanned by MediaScannar
+            request.allowScanningByMediaScanner()
+            //Download is visible and its progress, after completion too.
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            //DownloadManager created
+            val downloadmanager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            //Saving file in Download folder
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,filename)
+            //download enqued
+            downloadmanager.enqueue(request)
+        }
+        //If Cancel button clicks
+        builder.setNegativeButton("Cancel")
+        {dialog, which ->
+            //cancel the dialog if Cancel clicks
+            dialog.cancel()
+        }
+        val dialog:AlertDialog = builder.create()
+        //alertdialog shows
+        dialog.show()
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
     //ALL FUNCTIONS IN TEST STATUS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,6 +369,7 @@ class WebVieWer : AppCompatActivity() {
         return result
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     fun isOnline(context: Context): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
