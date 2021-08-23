@@ -28,10 +28,6 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.webkit.WebViewCompat
-import android.webkit.WebView
-
-
-
 
 
 class WebVieWer : AppCompatActivity() {
@@ -124,17 +120,11 @@ class WebVieWer : AppCompatActivity() {
                         }
 
                         //Catch Redirections errors
-                        fun shouldOverrideUrlLoading(view: WebView? , url: String?, request: Uri): Boolean {
-                            if (request.scheme == "blob") {
-                                // do your special handling for blob urls here
-                                return true
-                            }
+                        override fun shouldOverrideUrlLoading(view: WebView? , url: String?): Boolean {
                             view?.loadUrl(url!!)
                             //Toast.makeText(this, url, Toast.LENGTH_SHORT).show()
                             return true
-
                         }
-
                     }
                 }
 
@@ -198,8 +188,8 @@ class WebVieWer : AppCompatActivity() {
                 }
 
                 //Default link
-                val targetUrl = "http://quick-computer.herokuapp.com/View/index.php"
-                //val targetUrl = "http://mina.center/View/index.php"
+                //val targetUrl = "http://quick-computer.herokuapp.com/View/index.php"
+                val targetUrl = "http://mina.center/View/index.php"
                 webview.loadUrl(targetUrl)
 
             }
